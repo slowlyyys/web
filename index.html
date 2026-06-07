@@ -1,0 +1,525 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Resistencias Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --bg: #000000; 
+            --card: #0a0a0a; 
+            --input-bg: #121212;
+            --border: #1f2937;
+            --green: #10b981; 
+            --green-glow: rgba(16, 185, 129, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #6b7280;
+        }
+
+        /* Reset Universal */
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s ease; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- BARRA DE NAVEGACIÓN --- */
+        .navbar {
+            background-color: #050505;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-brand span { color: var(--green); }
+        .nav-menu { display: flex; gap: 24px; }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            gap: 4px;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        .nav-item i { font-size: 1.1rem; color: var(--text-muted); }
+        .nav-item:hover, .nav-item.active { color: #fff; }
+        .nav-item:hover i, .nav-item.active i { color: var(--green); }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 460px; 
+        }
+
+        /* --- VISTAS INTERCAMBIABLES --- */
+        .view-section { display: none; }
+        .view-section.active-view { display: block; animation: fadeIn 0.25s ease-out; }
+
+        /* --- TARJETAS AMOLED --- */
+        .card { 
+            background-color: var(--card); 
+            border-radius: 16px; 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        select, input { 
+            width: 100%;
+            padding: 14px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: var(--input-bg); 
+            color: var(--text-main); 
+            font-size: 1rem;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--green);
+            background: #151515;
+        }
+
+        #calc-type { margin-bottom: 20px; font-weight: 600; }
+
+        .input-wrapper { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+        }
+
+        input { flex: 2; font-family: 'Courier New', monospace; font-weight: bold; }
+        select.unit-select { flex: 1; font-size: 0.9rem; text-align: center; }
+
+        /* Botones */
+        .calc-btn { 
+            width: 100%; 
+            padding: 16px; 
+            background: var(--green); 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 1rem;
+            color: #000;
+            cursor: pointer; 
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .secondary-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .secondary-btn:hover {
+            border-color: var(--green);
+            color: var(--green);
+            background: var(--green-glow);
+        }
+
+        /* Pantalla de Resultados Dual */
+        .result-card {
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            background: linear-gradient(145deg, #020202, #0a0a0a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-row {
+            width: 100%;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 2px;
+        }
+
+        .val-out { 
+            font-size: 2.2rem; 
+            font-weight: 800; 
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            word-break: break-all; 
+        }
+
+        .val-scientific {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #93c5fd; /* Azul claro sutil para contrastar con el principal */
+            word-break: break-all;
+        }
+        
+        .pulse-animation { animation: pulseEffect 0.2s ease-in-out; }
+        #res-unit { font-size: 0.85rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px;}
+
+        /* Contenedor del Gráfico */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            margin-top: 10px;
+        }
+
+        /* --- RESPONSIVE ANDROID --- */
+        @media (max-width: 600px) {
+            .navbar { padding: 12px; }
+            .nav-brand { font-size: 1.05rem; }
+            .nav-menu { gap: 16px; }
+            .nav-item { font-size: 0.65rem; }
+            .main-wrapper { padding: 16px; }
+            .val-out { font-size: 1.8rem; }
+            .val-scientific { font-size: 1.2rem; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseEffect { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">
+        <i class="fa-solid fa-bolt"></i> Electro<span>Lab</span>
+    </div>
+    <div class="nav-menu">
+        <button id="nav-calc" class="nav-item active" onclick="switchView('calc')">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Calcular</span>
+        </button>
+        <button id="nav-chart" class="nav-item" onclick="switchView('chart')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Gráficos</span>
+        </button>
+    </div>
+</nav>
+
+<div class="main-wrapper">
+    <div class="container">
+        
+        <div id="view-calc" class="view-section active-view">
+            <div class="card">
+                <label for="calc-type"><i class="fa-solid fa-network-wired"></i> Fórmula a ejecutar</label>
+                <select id="calc-type" onchange="updateUI()">
+                    <optgroup label="Ley de Ohm">
+                        <option value="ohm_r">Resistencia (R)</option>
+                        <option value="ohm_v">Voltaje (V)</option>
+                        <option value="ohm_i">Corriente (I)</option>
+                    </optgroup>
+                    <optgroup label="Ley de Pouillet">
+                        <option value="p_r">Resistencia (R)</option>
+                        <option value="p_rho">Resistividad (ρ)</option>
+                        <option value="p_l">Longitud (L)</option>
+                        <option value="p_a">Área (A)</option>
+                    </optgroup>
+                </select>
+                
+                <div id="inputs"></div>
+                
+                <button class="calc-btn" onclick="calcular()">
+                    <i class="fa-solid fa-play"></i> Calcular
+                </button>
+            </div>
+
+            <div class="card result-card">
+                <div class="result-row">
+                    <div class="result-label">Resultado Estándar</div>
+                    <div class="val-out" id="res-val">0.00</div>
+                </div>
+                
+                <div class="result-row" style="border-top: 1px solid #1f2937; padding-top: 8px; margin-top: 4px;">
+                    <div class="result-label">Notación Científica</div>
+                    <div class="val-scientific" id="res-sci">0.00e0</div>
+                </div>
+
+                <div id="res-unit">Resultado</div>
+
+                <button id="btn-goto-chart" class="secondary-btn" style="display: none;" onclick="switchView('chart')">
+                    <i class="fa-solid fa-chart-line"></i> Ver comportamiento en gráfico
+                </button>
+            </div>
+        </div>
+
+        <div id="view-chart" class="view-section">
+            <div class="card">
+                <label id="chart-title"><i class="fa-solid fa-chart-area"></i> Análisis de Comportamiento</label>
+                <div class="chart-container">
+                    <canvas id="electricChart"></canvas>
+                </div>
+                <button class="secondary-btn" onclick="switchView('calc')">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Cálculo
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const configs = {
+        ohm_r: { fields: ["V", "I"], units: [["V"], ["A"]], unit: "Ω" },
+        ohm_v: { fields: ["R", "I"], units: [["Ω"], ["A"]], unit: "V" },
+        ohm_i: { fields: ["V", "R"], units: [["V"], ["Ω"]], unit: "A" },
+        p_r: { fields: ["ρ", "L", "A"], units: [["Ω·m"], ["m", "km"], ["m²", "mm²"]], unit: "Ω" },
+        p_rho: { fields: ["R", "A", "L"], units: [["Ω"], ["m²", "mm²"], ["m", "km"]], unit: "Ω·m" },
+        p_l: { fields: ["R", "A", "ρ"], units: [["Ω"], ["m²", "mm²"], ["Ω·m"]], unit: "m" },
+        p_a: { fields: ["ρ", "L", "R"], units: [["Ω·m"], ["m", "km"], ["Ω"]], unit: "m²" }
+    };
+
+    let globalResult = null;
+    let globalType = null;
+    let globalVals = [];
+    let myChart = null;
+
+    function switchView(view) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+        if(view === 'calc') {
+            document.getElementById('view-calc').classList.add('active-view');
+            document.getElementById('nav-calc').classList.add('active');
+        } else if(view === 'chart') {
+            document.getElementById('view-chart').classList.add('active-view');
+            document.getElementById('nav-chart').classList.add('active');
+            generarGrafico();
+        }
+    }
+
+    function updateUI() {
+        const type = document.getElementById('calc-type').value;
+        const container = document.getElementById('inputs');
+        container.innerHTML = configs[type].fields.map((f, i) => `
+            <div class="input-wrapper">
+                <input type="text" id="v${i}" placeholder="${f} (ej: 1,7e-7)">
+                <select id="u${i}" class="unit-select">
+                    ${configs[type].units[i].map(u => `<option value="${u}">${u}</option>`).join('')}
+                </select>
+            </div>
+        `).join('');
+        document.getElementById('btn-goto-chart').style.display = 'none';
+    }
+
+    function limpiarNumero(str) {
+        let s = str.replace(',', '.');
+        s = s.replace(/x10\^?|·10\^?|\*10\^?/gi, 'e');
+        return parseFloat(s);
+    }
+
+    function calcular() {
+        const type = document.getElementById('calc-type').value;
+        let vals = [];
+        let valid = true;
+        
+        configs[type].fields.forEach((_, i) => {
+            let texto = document.getElementById('v'+i).value;
+            let val = limpiarNumero(texto);
+            let unit = document.getElementById('u'+i).value;
+            
+            if (isNaN(val)) valid = false;
+            if (unit === 'mm²') val *= 1e-6;
+            if (unit === 'km') val *= 1000;
+            vals.push(val);
+        });
+
+        if(!valid) {
+            document.getElementById('res-val').innerText = "Error";
+            document.getElementById('res-sci').innerText = "Error";
+            return;
+        }
+
+        let res = 0;
+        switch(type) {
+            case 'ohm_r': case 'ohm_i': res = vals[0] / vals[1]; break;
+            case 'ohm_v': res = vals[0] * vals[1]; break;
+            case 'p_r': res = (vals[0] * vals[1]) / vals[2]; break;
+            case 'p_rho': res = (vals[0] * vals[1]) / vals[2]; break;
+            case 'p_l': res = (vals[0] * vals[1]) / vals[2]; break;
+            case 'p_a': res = (vals[0] * vals[1]) / vals[2]; break;
+        }
+
+        const resValEl = document.getElementById('res-val');
+        const resSciEl = document.getElementById('res-sci');
+        
+        globalResult = isFinite(res) ? res : null;
+        globalType = type;
+        globalVals = vals;
+
+        if (globalResult !== null) {
+            // 1. Mostrar formato normal (con hasta 6 decimales para evitar saturación visual si es muy largo)
+            resValEl.innerText = res.toLocaleString('en-US', {maximumFractionDigits: 6});
+            
+            // 2. Mostrar formato en Notación Científica pura (ej: 1.75e-7)
+            resSciEl.innerText = res.toExponential(4);
+            
+            document.getElementById('btn-goto-chart').style.display = 'flex';
+        } else {
+            resValEl.innerText = "Error";
+            resSciEl.innerText = "Error";
+            document.getElementById('btn-goto-chart').style.display = 'none';
+        }
+        
+        document.getElementById('res-unit').innerText = configs[type].unit;
+
+        // Animación sutil de pulso al refrescar datos
+        resValEl.classList.remove('pulse-animation');
+        resSciEl.classList.remove('pulse-animation');
+        void resValEl.offsetWidth; 
+        resValEl.classList.add('pulse-animation');
+        resSciEl.classList.add('pulse-animation');
+    }
+
+    function generarGrafico() {
+        const ctx = document.getElementById('electricChart').getContext('2d');
+        if (globalResult === null) {
+            if(myChart) myChart.destroy();
+            document.getElementById('chart-title').innerHTML = `<i class="fa-solid fa-chart-area"></i> Sin datos que graficar`;
+            return;
+        }
+
+        let labels = [];
+        let dataPoints = [];
+        let xAxisTitle = "";
+        let yAxisTitle = "";
+
+        if (globalType === 'ohm_v' || globalType === 'ohm_r' || globalType === 'ohm_i') {
+            xAxisTitle = "Corriente (A)";
+            yAxisTitle = "Voltaje (V)";
+            let rConst = globalType === 'ohm_v' ? globalVals[0] : (globalType === 'ohm_r' ? globalResult : globalVals[1]);
+            
+            for(let i = 0; i <= 10; i++) {
+                let current = (globalVals[1] || 1) * (i / 5); 
+                labels.push(current.toFixed(2) + " A");
+                dataPoints.push(rConst * current);
+            }
+            document.getElementById('chart-title').innerHTML = `<i class="fa-solid fa-chart-line"></i> Curva de Carga Ohmíca (R = ${rConst.toFixed(2)} Ω)`;
+        } else {
+            xAxisTitle = "Longitud (m)";
+            yAxisTitle = "Resistencia (Ω)";
+            let rho = (globalType === 'p_r') ? globalVals[0] : globalVals[2];
+            let area = (globalType === 'p_r') ? globalVals[2] : globalVals[1];
+            
+            for(let i = 1; i <= 10; i++) {
+                let length = (globalVals[1] || 10) * (i / 5);
+                labels.push(length.toFixed(1) + " m");
+                dataPoints.push((rho * length) / area);
+            }
+            document.getElementById('chart-title').innerHTML = `<i class="fa-solid fa-chart-line"></i> Resistencia vs Longitud (Pouillet)`;
+        }
+
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataPoints,
+                    borderColor: '#10b981',
+                    borderWidth: 3,
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    fill: true,
+                    tension: 0.1,
+                    pointBackgroundColor: '#ffffff',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { color: '#1f2937' },
+                        ticks: { color: '#6b7280', font: { size: 10 } },
+                        title: { display: true, text: xAxisTitle, color: '#f3f4f6' }
+                    },
+                    y: {
+                        grid: { color: '#1f2937' },
+                        ticks: { color: '#6b7280', font: { size: 10 } },
+                        title: { display: true, text: yAxisTitle, color: '#f3f4f6' }
+                    }
+                }
+            }
+        });
+    }
+
+    window.onload = updateUI;
+</script>
+</body>
+</html>
